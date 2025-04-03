@@ -32,10 +32,10 @@ jobs:
 
         for FILE in $CHANGED_FILES; do
           case "$FILE" in
-            solutions/*.c) RUN_C=1 ;;
-            solutions/*.cpp) RUN_CPP=1 ;;
-            solutions/*.py) RUN_PYTHON=1 ;;
-            solutions/*.java) RUN_JAVA=1 ;;
+            *.c) RUN_C=1 ;;
+            *.cpp) RUN_CPP=1 ;;
+            *.py) RUN_PYTHON=1 ;;
+            *.java) RUN_JAVA=1 ;;
           esac
         done
 
@@ -51,14 +51,14 @@ jobs:
         [[ "$RUN_C" == "1" ]] && sudo apt-get install -y gcc
         [[ "$RUN_CPP" == "1" ]] && sudo apt-get install -y g++
         [[ "$RUN_PYTHON" == "1" ]] && python3 -m pip install --upgrade pip pytest
-        [[ "$RUN_JAVA" == "1" ]] && sudo apt-get install -y default-jdk
+        [[ "$RUN_JAVA" == "1" ]] && sudo apt-get install -y --no-install-recommends openjdk-17-jdk
 
     # Compile and Run C Tests
     - name: Compile and Run C Tests
       if: env.RUN_C == '1'
       run: |
         echo "Running C Test Cases..."
-        gcc -o tests/test tests/test.c solutions/solution.c || exit 1
+        gcc -o tests/test tests/test.c solutions/solution.c
         ./tests/test
 
     # Compile and Run C++ Tests
@@ -66,7 +66,7 @@ jobs:
       if: env.RUN_CPP == '1'
       run: |
         echo "Running C++ Test Cases..."
-        g++ -o tests/test tests/test.cpp solutions/solution.cpp || exit 1
+        g++ -o tests/test tests/test.cpp solutions/solution.cpp
         ./tests/test
 
     # Run Python Tests (Formatted Output)
@@ -83,9 +83,8 @@ jobs:
       if: env.RUN_JAVA == '1'
       run: |
         echo "Running Java Test Cases..."
-        mkdir -p bin
-        javac -d bin solutions/Solution.java tests/Test.java || exit 1
-        java -cp bin tests.Test
+        javac -d . solutions/Solution.java tests/Test.java
+        java tests.Test
 
     # Upload Test Results
     - name: Upload Test Results
