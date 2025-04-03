@@ -59,10 +59,11 @@ jobs:
         if: env.RUN_C == '1'
         run: |
           echo "Running C Test Cases..."
-          if gcc -o tests/test solutions/solution.c tests/test.c -lm; then
+          if gcc -o tests/test tests/test.c solutions/solution.c; then
             ./tests/test || echo "C Test Case Failed"
           else
             echo "C Compilation Failed"
+            exit 1
           fi
 
       - name: Compile and Run C++ Tests
@@ -73,6 +74,7 @@ jobs:
             ./tests/test || echo "C++ Test Case Failed"
           else
             echo "C++ Compilation Failed"
+            exit 1
           fi
 
       - name: Run Python Tests (Formatted Output)
@@ -81,11 +83,7 @@ jobs:
           echo "Running Python Test Cases..."
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
-          if python3 tests/test.py | tee test_results.log; then
-            echo "Python Tests Passed"
-          else
-            echo "Python Test Case Failed"
-          fi
+          python3 tests/test.py | tee test_results.log
 
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
@@ -95,6 +93,7 @@ jobs:
             java tests.Test || echo "Java Test Case Failed"
           else
             echo "Java Compilation Failed"
+            exit 1
           fi
 
       - name: Upload Test Results
