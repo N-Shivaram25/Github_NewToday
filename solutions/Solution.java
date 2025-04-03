@@ -2,6 +2,6 @@ import java.util.*;
 
 public class Solution {
     public int[] sortedSquares(int[] nums) {
-        // Implement your solution heressss
+        // Implement your solution heresssss
     }
 }
