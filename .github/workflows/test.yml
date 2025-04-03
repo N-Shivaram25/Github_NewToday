@@ -48,13 +48,10 @@ jobs:
         run: |
           set -e
           sudo apt-get update
-          if [[ "$RUN_C" == "1" || "$RUN_CPP" == "1" || "$RUN_JAVA" == "1" ]]; then
-            sudo apt-get install -y gcc g++ default-jdk
-          fi
-          if [[ "$RUN_PYTHON" == "1" ]]; then
-            python3 -m pip install --upgrade pip pytest
-          fi
+          sudo apt-get install -y gcc g++ default-jdk python3 python3-pip
+          python3 -m pip install --upgrade pip pytest
 
+      # ------ C Compilation & Execution ------
       - name: Compile and Run C Tests
         if: env.RUN_C == '1'
         run: |
@@ -66,6 +63,7 @@ jobs:
             exit 1
           fi
 
+      # ------ C++ Compilation & Execution ------
       - name: Compile and Run C++ Tests
         if: env.RUN_CPP == '1'
         run: |
@@ -77,25 +75,29 @@ jobs:
             exit 1
           fi
 
-      - name: Run Python Tests (Formatted Output)
+      # ------ Python Execution ------
+      - name: Run Python Tests
         if: env.RUN_PYTHON == '1'
         run: |
           echo "Running Python Test Cases..."
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
-          python3 tests/test.py | tee test_results.log || echo "Python Test Case Failed"
+          python3 tests/test.py || echo "Python Test Case Failed"
 
+      # ------ Java Compilation & Execution ------
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
         run: |
           echo "Running Java Test Cases..."
-          if javac -d . solutions/Solution.java tests/Test.java; then
-            java tests.Test || echo "Java Test Case Failed"
+          mkdir -p classes
+          if javac -d classes solutions/Solution.java tests/Test.java; then
+            java -cp classes Test || echo "Java Test Case Failed"
           else
             echo "Java Compilation Failed"
             exit 1
           fi
 
+      # ------ Upload Test Results ------
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
