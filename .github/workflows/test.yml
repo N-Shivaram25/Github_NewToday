@@ -1,14 +1,12 @@
-name: Run Programming Language Tests
+name: Run Code Tests
 
 on:
   push:
-    paths:
-      - 'solutions/**'
-      - 'tests/**'
+    branches:
+      - main
   pull_request:
-    paths:
-      - 'solutions/**'
-      - 'tests/**'
+    branches:
+      - main
 
 jobs:
   run-tests:
@@ -18,77 +16,90 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Install required compilers and runtimes (optimized for speed)
-      - name: Setup C/C++ Compiler
-        run: sudo apt-get update && sudo apt-get install -y gcc g++
-
-      - name: Setup Java (Fast)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      # Detect Changed Files
       - name: Detect Changed Files
         id: changed-files
-        run: |
-          echo "Detecting modified solution files..."
-          git diff --name-only HEAD~1 > changed_files.txt
-          cat changed_files.txt
+        uses: tj-actions/changed-files@v44
 
-      # Run C Tests if solution.c is modified
+      - name: Determine File Types
+        id: detect-language
+        run: |
+          echo "Checking which files changed..."
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+          RUN_C=0
+          RUN_CPP=0
+          RUN_PYTHON=0
+          RUN_JAVA=0
+
+          for FILE in $CHANGED_FILES; do
+            case "$FILE" in
+              solutions/*.c) RUN_C=1 ;;
+              solutions/*.cpp) RUN_CPP=1 ;;
+              solutions/*.py) RUN_PYTHON=1 ;;
+              solutions/*.java) RUN_JAVA=1 ;;
+            esac
+          done
+
+          echo "RUN_C=$RUN_C" >> $GITHUB_ENV
+          echo "RUN_CPP=$RUN_CPP" >> $GITHUB_ENV
+          echo "RUN_PYTHON=$RUN_PYTHON" >> $GITHUB_ENV
+          echo "RUN_JAVA=$RUN_JAVA" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: |
+          set -e
+          sudo apt-get update
+          if [[ "$RUN_C" == "1" || "$RUN_CPP" == "1" || "$RUN_JAVA" == "1" ]]; then
+            sudo apt-get install -y gcc g++ default-jdk
+          fi
+          if [[ "$RUN_PYTHON" == "1" ]]; then
+            python3 -m pip install --upgrade pip pytest
+          fi
+
       - name: Compile and Run C Tests
+        if: env.RUN_C == '1'
         run: |
-          if grep -q 'solutions/solution.c' changed_files.txt; then
-            echo "Running C Test Cases..."
-            if gcc -o c_test solutions/solution.c tests/test.c -lm; then
-              ./c_test || echo "C Test Case Failed"
-            else
-              echo "C Compilation Failed"
-            fi
+          echo "Running C Test Cases..."
+          if gcc -o tests/test solutions/solution.c tests/test.c -lm; then
+            ./tests/test || echo "C Test Case Failed"
           else
-            echo "No changes detected in solution.c"
+            echo "C Compilation Failed"
           fi
 
-      # Run C++ Tests if solution.cpp is modified
       - name: Compile and Run C++ Tests
+        if: env.RUN_CPP == '1'
         run: |
-          if grep -q 'solutions/solution.cpp' changed_files.txt; then
-            echo "Running C++ Test Cases..."
-            if g++ -o cpp_test solutions/solution.cpp tests/test.cpp; then
-              ./cpp_test || echo "C++ Test Case Failed"
-            else
-              echo "C++ Compilation Failed"
-            fi
+          echo "Running C++ Test Cases..."
+          if g++ -o tests/test solutions/solution.cpp tests/test.cpp; then
+            ./tests/test || echo "C++ Test Case Failed"
           else
-            echo "No changes detected in solution.cpp"
+            echo "C++ Compilation Failed"
           fi
 
-      # Run Java Tests if Solution.java is modified
+      - name: Run Python Tests (Formatted Output)
+        if: env.RUN_PYTHON == '1'
+        run: |
+          echo "Running Python Test Cases..."
+          export PYTHONUNBUFFERED=1
+          export PYTHONPATH=$PWD
+          if python3 tests/test.py | tee test_results.log; then
+            echo "Python Tests Passed"
+          else
+            echo "Python Test Case Failed"
+          fi
+
       - name: Compile and Run Java Tests
+        if: env.RUN_JAVA == '1'
         run: |
-          if grep -q 'solutions/Solution.java' changed_files.txt; then
-            echo "Running Java Test Cases..."
-            if javac -d . solutions/Solution.java tests/Test.java; then
-              java tests.Test || echo "Java Test Case Failed"
-            else
-              echo "Java Compilation Failed"
-            fi
+          echo "Running Java Test Cases..."
+          if javac -d . solutions/Solution.java tests/Test.java; then
+            java tests.Test || echo "Java Test Case Failed"
           else
-            echo "No changes detected in Solution.java"
+            echo "Java Compilation Failed"
           fi
 
-      # Run Python Tests if solution.py is modified
-      - name: Run Python Tests
-        run: |
-          if grep -q 'solutions/solution.py' changed_files.txt; then
-            echo "Running Python Test Cases..."
-            python3 tests/test.py || echo "Python Test Case Failed"
-          else
-            echo "No changes detected in solution.py"
-          fi
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test_results.log
