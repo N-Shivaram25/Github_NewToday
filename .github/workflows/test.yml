@@ -32,10 +32,10 @@ jobs:
 
         for FILE in $CHANGED_FILES; do
           case "$FILE" in
-            *.c) RUN_C=1 ;;
-            *.cpp) RUN_CPP=1 ;;
-            *.py) RUN_PYTHON=1 ;;
-            *.java) RUN_JAVA=1 ;;
+            solutions/*.c) RUN_C=1 ;;
+            solutions/*.cpp) RUN_CPP=1 ;;
+            solutions/*.py) RUN_PYTHON=1 ;;
+            solutions/*.java) RUN_JAVA=1 ;;
           esac
         done
 
@@ -58,7 +58,7 @@ jobs:
       if: env.RUN_C == '1'
       run: |
         echo "Running C Test Cases..."
-        gcc -o tests/test tests/test.c solutions/solution.c
+        gcc -o tests/test tests/test.c solutions/solution.c || exit 1
         ./tests/test
 
     # Compile and Run C++ Tests
@@ -66,7 +66,7 @@ jobs:
       if: env.RUN_CPP == '1'
       run: |
         echo "Running C++ Test Cases..."
-        g++ -o tests/test tests/test.cpp solutions/solution.cpp
+        g++ -o tests/test tests/test.cpp solutions/solution.cpp || exit 1
         ./tests/test
 
     # Run Python Tests (Formatted Output)
@@ -74,8 +74,8 @@ jobs:
       if: env.RUN_PYTHON == '1'
       run: |
         echo "Running Python Test Cases..."
-        export PYTHONUNBUFFERED=1
-        export PYTHONPATH=$PWD
+        export PYTHONUNBUFFERED=1  
+        export PYTHONPATH=$PWD  
         python3 tests/test.py | tee test_results.log
 
     # Compile and Run Java Tests
@@ -84,7 +84,7 @@ jobs:
       run: |
         echo "Running Java Test Cases..."
         mkdir -p bin
-        javac -d bin solutions/Solution.java tests/Test.java
+        javac -d bin solutions/Solution.java tests/Test.java || exit 1
         java -cp bin tests.Test
 
     # Upload Test Results

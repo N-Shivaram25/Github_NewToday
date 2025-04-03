@@ -1,10 +1,8 @@
 #include <vector>
 
-using namespace std;
-
 class Solution {
 public:
-    vector<int> sortedSquares(vector<int>& nums) {
-        // Implement your solution hered
+    std::vector<int> sortedSquares(std::vector<int>& nums) {
+        return {}; // Temporary return to avoid compiler error
     }
 };
