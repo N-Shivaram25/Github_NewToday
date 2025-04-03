@@ -1,5 +1,5 @@
 import pytest
-from solutions.solution import Solution  # Ensure correct import
+from solutions.solution import Solution  # Ensure correct imports
 
 # Test cases for the function
 @pytest.mark.parametrize("input_data, expected_output", [
