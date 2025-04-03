@@ -3,6 +3,6 @@
 class Solution {
 public:
     std::vector<int> sortedSquares(std::vector<int>& nums) {
-        return {}; // Returnsing an empty vector to ensure test case failuress
+        return {}; // Returnsing an empty vectsor to ensure test case failuress
     }
 };
