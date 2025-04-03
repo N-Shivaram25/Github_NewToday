@@ -36,46 +36,59 @@ jobs:
       # Detect Changed Files
       - name: Detect Changed Files
         id: changed-files
-        uses: tj-actions/changed-files@v39
-        with:
-          files: solutions/*
+        run: |
+          echo "Detecting modified solution files..."
+          git diff --name-only HEAD~1 > changed_files.txt
+          cat changed_files.txt
 
-      # Run C Tests if solution.c is changed (Runnable or Base Code)
+      # Run C Tests if solution.c is modified
       - name: Compile and Run C Tests
-        if: contains(steps.changed-files.outputs.all_modified_files, 'solutions/solution.c')
         run: |
-          echo "Running C Test Cases..."
-          if gcc -o c_test solutions/solution.c tests/test.c -lm; then
-            ./c_test || echo "C Test Case Failed"
+          if grep -q 'solutions/solution.c' changed_files.txt; then
+            echo "Running C Test Cases..."
+            if gcc -o c_test solutions/solution.c tests/test.c -lm; then
+              ./c_test || echo "C Test Case Failed"
+            else
+              echo "C Compilation Failed"
+            fi
           else
-            echo "C Compilation Failed"
+            echo "No changes detected in solution.c"
           fi
 
-      # Run C++ Tests if solution.cpp is changed (Runnable or Base Code)
+      # Run C++ Tests if solution.cpp is modified
       - name: Compile and Run C++ Tests
-        if: contains(steps.changed-files.outputs.all_modified_files, 'solutions/solution.cpp')
         run: |
-          echo "Running C++ Test Cases..."
-          if g++ -o cpp_test solutions/solution.cpp tests/test.cpp; then
-            ./cpp_test || echo "C++ Test Case Failed"
+          if grep -q 'solutions/solution.cpp' changed_files.txt; then
+            echo "Running C++ Test Cases..."
+            if g++ -o cpp_test solutions/solution.cpp tests/test.cpp; then
+              ./cpp_test || echo "C++ Test Case Failed"
+            else
+              echo "C++ Compilation Failed"
+            fi
           else
-            echo "C++ Compilation Failed"
+            echo "No changes detected in solution.cpp"
           fi
 
-      # Run Java Tests if Solution.java is changed (Runnable or Base Code)
+      # Run Java Tests if Solution.java is modified
       - name: Compile and Run Java Tests
-        if: contains(steps.changed-files.outputs.all_modified_files, 'solutions/Solution.java')
         run: |
-          echo "Running Java Test Cases..."
-          if javac -d . solutions/Solution.java tests/Test.java; then
-            java tests.Test || echo "Java Test Case Failed"
+          if grep -q 'solutions/Solution.java' changed_files.txt; then
+            echo "Running Java Test Cases..."
+            if javac -d . solutions/Solution.java tests/Test.java; then
+              java tests.Test || echo "Java Test Case Failed"
+            else
+              echo "Java Compilation Failed"
+            fi
           else
-            echo "Java Compilation Failed"
+            echo "No changes detected in Solution.java"
           fi
 
-      # Run Python Tests if solution.py is changed (Runnable or Base Code)
+      # Run Python Tests if solution.py is modified
       - name: Run Python Tests
-        if: contains(steps.changed-files.outputs.all_modified_files, 'solutions/solution.py')
         run: |
-          echo "Running Python Test Cases..."
-          python3 tests/test.py || echo "Python Test Case Failed"
+          if grep -q 'solutions/solution.py' changed_files.txt; then
+            echo "Running Python Test Cases..."
+            python3 tests/test.py || echo "Python Test Case Failed"
+          else
+            echo "No changes detected in solution.py"
+          fi
